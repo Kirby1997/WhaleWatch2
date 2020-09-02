@@ -54,6 +54,7 @@ async def get_price():
         print(e)
         return None
 
+
 async def read_labels():
     known_labels = {}
     async with aiofiles.open('labels.txt') as f:
@@ -64,11 +65,8 @@ async def read_labels():
             keypair = keypair.split(":")
             try:
                 known_labels[keypair[0]] = keypair[1]
-                #print(keypair[0])
-                #print(keypair[1])
-                #print(known_labels[keypair[0]])
-                print("AAAA")
-            except:
+            except Exception as e:
+                print(e)
                 print("inconsistency at line {} containing \"{}\" ".format(linenum, line))
                 print("Formatting should be address:label")
     return known_labels
@@ -155,24 +153,16 @@ async def main():
                             recipient = recipient[:16] + "..."
 
                     if sender == lastsender and not throttle and amount >= 1_000_000:
-
                         throttle = True
-                        tweet = sender + " is sending many big payments!! Check them out!"
-                        # send_tweet(tweet)
+                        tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
+                        send_tweet(tweet)
                     else:
-
+                        price = await get_price()
+                        value = amount * price
                         if sender == "Kirby" and subtype == "send" and amount == 19 and recipient == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy"[:16] + "...":
                             print("HI KIRBY@@@@@@@")
-                            tweet = sender[:16] + "... sent " + str(amount) + " $BAN to " + recipient[:16] + "...\nAyylmao test" + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
-                            # send_tweet(tweet)
                             #user = client.get_user(int("186534361099796481"))
                             #await user.send(tweet)
-                            price = await get_price()
-                            value = amount * price
-                            print(tweet)
-                            tweet = "\U0001F34C \U0001F34C \U0001F34C A big splash has been observed! \U0001F34C \U0001F34C \U0001F34C \n" + sender[:16] + "... sent " + str(amount) + "$BAN ($" + str(round(value, 2)) + ") to " + recipient[:16] + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
-                            print(value)
-                            print(tweet)
 
                             tweet = "\U0001F34C \U0001F34C \U0001F34C A big splash has been observed! \U0001F34C \U0001F34C \U0001F34C \n" + sender + " sent " + str(
                                 amount) + "$BAN ($" + str(round(value, 2)) + ") to " + recipient + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
@@ -181,13 +171,15 @@ async def main():
                             lastrecipient = recipient
                             lastamount = amount
                         if amount >= 1_000_000 and recipient != lastsender and (sender != lastrecipient and amount != lastamount):
-                            tweet = "\U0001F34C \U0001F34C \U0001F34C" + sender[:16] + "... sent " + str(amount) + " $BAN to " + recipient[:16] + "...\nThe lambo has arrived" + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block + " \U0001F34C \U0001F34C \U0001F34C"
-                            # send_tweet(tweet)
+
+                            tweet = "\U0001F34C \U0001F34C \U0001F34C A big splash has been observed! \U0001F34C \U0001F34C \U0001F34C \n" + sender + " sent " + str(
+                                amount) + "$BAN ($" + str(round(value,
+                                                                2)) + ") to " + recipient + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
+                            send_tweet(tweet)
 
                             lastsender = sender
                             lastrecipient = recipient
                             lastamount = amount
-                    # send_tweet(lastTweet, tweet)
 
 
 try:
