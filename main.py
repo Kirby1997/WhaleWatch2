@@ -152,14 +152,15 @@ async def main():
                             sender = sender[:16] + "..."
                         if len(recipient) >= 16:
                             recipient = recipient[:16] + "..."
+                        price = await get_price()
+                        value = amount * price
 
                     if sender == lastsender and not throttle and amount >= 1_000_000:
                         throttle = True
                         tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
                         send_tweet(tweet)
                     else:
-                        price = await get_price()
-                        value = amount * price
+
                         if sender == "Kirby" and subtype == "send" and amount == 19 and recipient == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy"[:16] + "...":
                             print("HI KIRBY@@@@@@@")
                             #user = client.get_user(int("186534361099796481"))
