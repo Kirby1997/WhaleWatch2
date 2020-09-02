@@ -48,11 +48,13 @@ async def get_price():
         async with aiohttp.ClientSession() as session:
             async with session.get("https://api.coingecko.com/api/v3/simple/price?ids=banano&vs_currencies=usd") as resp:
                 jsonResp = await resp.json()
+                print(jsonResp)
                 price = jsonResp["banano"]["usd"]
+                print(price)
                 return price
     except Exception as e:
         print(e)
-        return None
+        return 0
 
 
 async def read_labels():
@@ -139,14 +141,13 @@ async def main():
                     block = message["hash"]
 
                     if amount >= 1_000_000 or sender == "ban_1kirby19w89i35yenyesnz7zqdyguzdb3e819dxrhdegdnsaphzeug39ntxj":
+                        print(block)
                         labels = await read_labels()
                         for label_pair in labels:
-                            print(label_pair)
                             if label_pair == sender:
                                 sender = labels[sender]
                             if label_pair == recipient:
                                 recipient = labels[recipient]
-                        print(len(sender))
                         if len(sender) >= 16:
                             sender = sender[:16] + "..."
                         if len(recipient) >= 16:
