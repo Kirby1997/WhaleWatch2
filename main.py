@@ -90,8 +90,12 @@ def pretty(message):
 
 
 def send_tweet(tweet):
-    tweets = api.GetUserTimeline(user_id=twitacc, count=1)
-    lastTweet = tweets[0].text
+    try:
+        tweets = api.GetUserTimeline(user_id=twitacc, count=1)
+        lastTweet = tweets[0].text
+    except Exception as e:
+        print(e)
+        print("Probably failed to get Twitter timeline at ", time.ctime())
     try:
         if lastTweet != tweet:
             api.PostUpdate(tweet)
