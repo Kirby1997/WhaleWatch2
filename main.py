@@ -176,7 +176,7 @@ async def main():
                             lastsender = sender
                             lastrecipient = recipient
                             lastamount = amount
-                        if amount >= 1_000_000 and recipient != lastsender and (sender != lastrecipient and amount != lastamount):
+                        if amount >= 100_000 and recipient != lastsender and (sender != lastrecipient and amount != lastamount):
 
                             tweet = "\U0001F34C \U0001F34C \U0001F34C A big splash has been observed! \U0001F34C \U0001F34C \U0001F34C \n" + sender + " sent " + str(
                                 amount) + "$BAN ($" + str(round(value,
