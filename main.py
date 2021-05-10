@@ -144,7 +144,7 @@ async def main():
                     subtype = message["block"]["subtype"]
                     block = message["hash"]
 
-                    if amount >= 1_000_000 or sender == "ban_1kirby19w89i35yenyesnz7zqdyguzdb3e819dxrhdegdnsaphzeug39ntxj":
+                    if amount >= 100_000 or sender == "ban_1kirby19w89i35yenyesnz7zqdyguzdb3e819dxrhdegdnsaphzeug39ntxj":
                         print(block)
                         labels = await read_labels()
                         for label_pair in labels:
@@ -159,7 +159,7 @@ async def main():
                         price = await get_price()
                         value = amount * price
 
-                    if sender == lastsender and not throttle and amount >= 1_000_000:
+                    if sender == lastsender and not throttle and amount >= 100_000:
                         throttle = True
                         tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
                         send_tweet(tweet)
