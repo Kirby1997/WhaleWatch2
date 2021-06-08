@@ -6,5 +6,6 @@
   "wsIP":"",
   "wsPort":"",
   "twitacc":,
-  "disckey":""
+  "disckey":"",
+  "whaleamount": 100000
 }

@@ -11,8 +11,6 @@ import aiofiles
 import discord
 
 
-
-
 with open("config.json") as config:
     config = json.load(config)
     ckey = config["consumer_key"]
@@ -23,6 +21,7 @@ with open("config.json") as config:
     wsPort = config["wsPort"]
     twitacc = config["twitacc"]
     disckey = config["disckey"]
+    whaleamount = config["whaleamount"]
 
 #client = discord.Client()
 
@@ -57,21 +56,20 @@ async def get_price():
         return 0
 
 
-async def read_labels():
-    known_labels = {}
-    async with aiofiles.open('labels.txt') as f:
-        linenum = 0
-        async for line in f:
-            linenum += linenum
-            keypair = line.strip()
-            keypair = keypair.split(":")
-            try:
-                known_labels[keypair[0]] = keypair[1]
-            except Exception as e:
-                print(e)
-                print("inconsistency at line {} containing \"{}\" ".format(linenum, line))
-                print("Formatting should be address:label")
-    return known_labels
+async def get_label(address):
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                    "https://kirby.eu.pythonanywhere.com/api/v1/resources/addresses?address=" + address) as resp:
+                jsonResp = await resp.json()
+                if len(jsonResp) > 0:
+                    label = jsonResp[0]["alias"]
+                    return label
+                else:
+                    return address[:16] + "..."
+    except Exception as e:
+        print(e)
+        return address[:16] + "..."
 
 
 def subscription(topic: str, ack: bool = False, options: dict = None):
@@ -137,50 +135,23 @@ async def main():
             if topic:
                 message = rec["message"]
                 if topic == "confirmation":
-                    # print("Block confirmed:\n {}".format(pretty(message)))
-                    amount = int(message["amount"]) / 10 ** 29
-                    sender = message["account"]
-                    recipient = message["block"]["link_as_account"]
+                    amount = round(int(message["amount"]) / 10 ** 29, 0)
+                    sender = await get_label(message["account"])
+                    recipient = await get_label(message["block"]["link_as_account"])
                     subtype = message["block"]["subtype"]
                     block = message["hash"]
-
-                    if amount >= 100_000 or sender == "ban_1kirby19w89i35yenyesnz7zqdyguzdb3e819dxrhdegdnsaphzeug39ntxj":
-                        print(block)
-                        labels = await read_labels()
-                        for label_pair in labels:
-                            if label_pair == sender:
-                                sender = labels[sender]
-                            if label_pair == recipient:
-                                recipient = labels[recipient]
-                        if len(sender) >= 16:
-                            sender = sender[:16] + "..."
-                        if len(recipient) >= 16:
-                            recipient = recipient[:16] + "..."
+                    if subtype == "send" and amount >= whaleamount:
                         price = await get_price()
-                        value = amount * price
+                        value = round(amount * price, 0)
 
-                    if sender == lastsender and not throttle and amount >= 100_000:
-                        throttle = True
-                        tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
-                        send_tweet(tweet)
-                    else:
-
-                        if sender == "Kirby" and subtype == "send" and amount == 19 and recipient == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy"[:16] + "...":
-                            print("HI KIRBY@@@@@@@")
-                            #user = client.get_user(int("186534361099796481"))
-                            #await user.send(tweet)
+                        if sender == lastsender and not throttle and amount >= whaleamount:
+                            throttle = True
+                            tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
+                            send_tweet(tweet)
+                        elif amount >= whaleamount and recipient != lastsender and (sender != lastrecipient and amount != lastamount):
 
                             tweet = "\U0001F34C \U0001F34C \U0001F34C A big splash has been observed! \U0001F34C \U0001F34C \U0001F34C \n" + sender + " sent " + str(
-                                amount) + "$BAN ($" + str(round(value, 2)) + ") to " + recipient + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
-                            print(tweet)
-                            lastsender = sender
-                            lastrecipient = recipient
-                            lastamount = amount
-                        if amount >= 100_000 and recipient != lastsender and (sender != lastrecipient and amount != lastamount):
-
-                            tweet = "\U0001F34C \U0001F34C \U0001F34C A big splash has been observed! \U0001F34C \U0001F34C \U0001F34C \n" + sender + " sent " + str(
-                                amount) + "$BAN ($" + str(round(value,
-                                                                2)) + ") to " + recipient + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
+                                amount) + "$BAN ($" + str(value) + ") to " + recipient + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
                             send_tweet(tweet)
 
                             lastsender = sender
