@@ -61,10 +61,14 @@ async def get_label(address):
         async with aiohttp.ClientSession() as session:
             async with session.get(
                     "https://kirby.eu.pythonanywhere.com/api/v1/resources/addresses?address=" + address) as resp:
-                jsonResp = await resp.json()
-                if len(jsonResp) > 0:
-                    label = jsonResp[0]["alias"]
-                    return label
+                print(resp.headers["Content-Type"])
+                if resp.headers["Content-Type"] == "application/json":
+                    jsonResp = await resp.json()
+                    if len(jsonResp) > 0:
+                        label = jsonResp[0]["alias"]
+                        return label
+                    else:
+                        return address[:16] + "..."
                 else:
                     return address[:16] + "..."
     except Exception as e:
@@ -110,53 +114,57 @@ def send_tweet(tweet):
 
 
 async def main():
+    while 1:
+        try:
+            async with websockets.connect(f"ws://{args.host}:{args.port}") as websocket:
 
-    async with websockets.connect(f"ws://{args.host}:{args.port}") as websocket:
+                # Subscribe to both confirmation and votes
+                # You can also add options here following instructions in
+                # https://docs.nano.org/integration-guides/websockets/
 
-        # Subscribe to both confirmation and votes
-        # You can also add options here following instructions in
-        # https://docs.nano.org/integration-guides/websockets/
+                await websocket.send(json.dumps(subscription("confirmation", options={"include_election_info": "false", "include_block":"true"}, ack=True)))
+                print(await websocket.recv()) # ack
 
-        await websocket.send(json.dumps(subscription("confirmation", options={"include_election_info": "false", "include_block":"true"}, ack=True)))
-        print(await websocket.recv()) # ack
+                # V21.0+
+                # await websocket.send(json.dumps(subscription("work", ack=True)))
+                # print(await websocket.recv())  # ack
 
-        # V21.0+
-        # await websocket.send(json.dumps(subscription("work", ack=True)))
-        # print(await websocket.recv())  # ack
+                lastsender = ""
+                lastamount = ""
+                lastrecipient = ""
+                throttle = False
+                while 1:
 
-        lastsender = ""
-        lastamount = ""
-        lastrecipient = ""
-        throttle = False
-        while 1:
+                    rec = json.loads(await websocket.recv())
+                    topic = rec.get("topic", None)
+                    if topic:
+                        message = rec["message"]
+                        if topic == "confirmation":
+                            amount = round(int(message["amount"]) / 10 ** 29, 0)
 
-            rec = json.loads(await websocket.recv())
-            topic = rec.get("topic", None)
-            if topic:
-                message = rec["message"]
-                if topic == "confirmation":
-                    amount = round(int(message["amount"]) / 10 ** 29, 0)
-                    sender = await get_label(message["account"])
-                    recipient = await get_label(message["block"]["link_as_account"])
-                    subtype = message["block"]["subtype"]
-                    block = message["hash"]
-                    if subtype == "send" and amount >= whaleamount:
-                        price = await get_price()
-                        value = round(amount * price, 0)
+                            subtype = message["block"]["subtype"]
+                            block = message["hash"]
+                            if subtype == "send" and amount >= whaleamount:
+                                sender = await get_label(message["account"])
+                                recipient = await get_label(message["block"]["link_as_account"])
+                                price = await get_price()
+                                value = round(amount * price, 0)
 
-                        if sender == lastsender and not throttle and amount >= whaleamount:
-                            throttle = True
-                            tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
-                            send_tweet(tweet)
-                        elif amount >= whaleamount and recipient != lastsender and (sender != lastrecipient and amount != lastamount):
+                                if sender == lastsender and not throttle and amount >= whaleamount:
+                                    throttle = True
+                                    tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
+                                    send_tweet(tweet)
+                                elif amount >= whaleamount and recipient != lastsender and (sender != lastrecipient and amount != lastamount):
 
-                            tweet = "\U0001F34C \U0001F34C \U0001F34C A big splash has been observed! \U0001F34C \U0001F34C \U0001F34C \n" + sender + " sent " + str(
-                                amount) + "$BAN ($" + str(value) + ") to " + recipient + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
-                            send_tweet(tweet)
+                                    tweet = "\U0001F34C \U0001F34C \U0001F34C A big splash has been observed! \U0001F34C \U0001F34C \U0001F34C \n" + sender + " sent " + str(
+                                        amount) + "$BAN ($" + str(value) + ") to " + recipient + "\nBlock: " + "https://creeper.banano.cc/explorer/block/" + block
+                                    send_tweet(tweet)
 
-                            lastsender = sender
-                            lastrecipient = recipient
-                            lastamount = amount
+                                    lastsender = sender
+                                    lastrecipient = recipient
+                                    lastamount = amount
+        except Exception as e:
+            print(e)
 
 
 try:
