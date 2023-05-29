@@ -4,7 +4,7 @@ import asyncio
 import websockets
 import argparse
 import json
-import twitter
+import pytwitter as twitter
 import time
 import aiohttp
 import aiofiles
@@ -15,8 +15,8 @@ with open("config.json") as config:
     config = json.load(config)
     ckey = config["consumer_key"]
     csec = config["consumer_secret"]
-    akey = config["access_token_key"]
-    asec = config["access_token_secret"]
+    akey = config["access_token"]
+    asec = config["access_secret"]
     wsIP = config["wsIP"]
     wsPort = config["wsPort"]
     twitacc = config["twitacc"]
@@ -93,14 +93,14 @@ def pretty(message):
 
 def send_tweet(tweet):
     try:
-        tweets = api.GetUserTimeline(user_id=twitacc, count=1)
+        tweets = api.get_timelines(user_id=twitacc, max_results=1)
         lastTweet = tweets[0].text
     except Exception as e:
         print(e)
         print("Probably failed to get Twitter timeline at ", time.ctime())
     try:
         if lastTweet != tweet:
-            api.PostUpdate(tweet)
+            api.create_tweet(tweet)
     except Exception as exc:
         print(exc)
         if exc == "[{\'message\': \'Rate limit exceeded\', \'code\': 88}]":
