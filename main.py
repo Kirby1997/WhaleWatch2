@@ -144,13 +144,16 @@ async def main():
 
                             subtype = message["block"]["subtype"]
                             block = message["hash"]
-                            if subtype == "send": #and amount >= whaleamount:
+                            if sender == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy" or (subtype == "send" and amount >= whaleamount):
                                 sender = await get_label(message["account"])
                                 recipient = await get_label(message["block"]["link_as_account"])
                                 price = await get_price()
                                 value = round(amount * price, 0)
-                                if sender == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy" and amount == 22:
-                                    send_tweet("test")
+                                if sender == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy":
+                                    if amount == 23.5:
+                                        send_tweet("test")
+                                    if amount == 22.5:
+                                        print("TEST SENT FROM")
                                 if sender == lastsender and not throttle and amount >= whaleamount:
                                     throttle = True
                                     tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
