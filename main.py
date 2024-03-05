@@ -4,7 +4,7 @@ import asyncio
 import websockets
 import argparse
 import json
-import twitter
+import tweepy
 import time
 import aiohttp
 import aiofiles
@@ -29,9 +29,9 @@ with open("config.json") as config:
 #print('We have logged in as {0.user}'.format(client))
 
 
-api = twitter.Api(consumer_key=ckey,
+client = tweepy.Client(consumer_key=ckey,
                   consumer_secret=csec,
-                  access_token_key=akey,
+                  access_token=akey,
                   access_token_secret=asec)
 
 #print(api.VerifyCredentials())
@@ -93,14 +93,14 @@ def pretty(message):
 
 def send_tweet(tweet):
     try:
-        tweets = api.GetUserTimeline(user_id=twitacc, count=1)
+        tweets = client.get_users_tweets(user_id=twitacc, max_results=1)
         lastTweet = tweets[0].text
     except Exception as e:
         print(e)
         print("Probably failed to get Twitter timeline at ", time.ctime())
     try:
         if lastTweet != tweet:
-            api.PostUpdate(tweet)
+            client.create_tweet(text=tweet)
     except Exception as exc:
         print(exc)
         if exc == "[{\'message\': \'Rate limit exceeded\', \'code\': 88}]":
@@ -144,12 +144,13 @@ async def main():
 
                             subtype = message["block"]["subtype"]
                             block = message["hash"]
-                            if subtype == "send" and amount >= whaleamount:
+                            if subtype == "send": #and amount >= whaleamount:
                                 sender = await get_label(message["account"])
                                 recipient = await get_label(message["block"]["link_as_account"])
                                 price = await get_price()
                                 value = round(amount * price, 0)
-
+                                if sender == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy" and amount == 22:
+                                    send_tweet("test")
                                 if sender == lastsender and not throttle and amount >= whaleamount:
                                     throttle = True
                                     tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
