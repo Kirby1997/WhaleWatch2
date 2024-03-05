@@ -144,9 +144,10 @@ async def main():
 
                             subtype = message["block"]["subtype"]
                             block = message["hash"]
+                            sender = await get_label(message["account"])
+                            recipient = await get_label(message["block"]["link_as_account"])
                             if sender == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy" or (subtype == "send" and amount >= whaleamount):
-                                sender = await get_label(message["account"])
-                                recipient = await get_label(message["block"]["link_as_account"])
+
                                 price = await get_price()
                                 value = round(amount * price, 0)
                                 if sender == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy":
