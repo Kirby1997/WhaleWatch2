@@ -17,6 +17,7 @@ with open("config.json") as config:
     csec = config["consumer_secret"]
     akey = config["access_token_key"]
     asec = config["access_token_secret"]
+    bearer = config["bearer_token"]
     wsIP = config["wsIP"]
     wsPort = config["wsPort"]
     twitacc = config["twitacc"]
@@ -32,7 +33,8 @@ with open("config.json") as config:
 client = tweepy.Client(consumer_key=ckey,
                   consumer_secret=csec,
                   access_token=akey,
-                  access_token_secret=asec)
+                  access_token_secret=asec,
+                       bearer_token=bearer)
 
 #print(api.VerifyCredentials())
 
@@ -92,15 +94,15 @@ def pretty(message):
 
 
 def send_tweet(tweet):
+    #try:
+        #tweets = client.get_users_tweets(id=twitacc, max_results=1)
+        #lastTweet = tweets[0].text
+    #except Exception as e:
+        #print(e)
+        #print("Probably failed to get Twitter timeline at ", time.ctime())
     try:
-        tweets = client.get_users_tweets(user_id=twitacc, max_results=1)
-        lastTweet = tweets[0].text
-    except Exception as e:
-        print(e)
-        print("Probably failed to get Twitter timeline at ", time.ctime())
-    try:
-        if lastTweet != tweet:
-            client.create_tweet(text=tweet)
+        #if lastTweet != tweet:
+        client.create_tweet(text=tweet)
     except Exception as exc:
         print(exc)
         if exc == "[{\'message\': \'Rate limit exceeded\', \'code\': 88}]":
@@ -146,15 +148,14 @@ async def main():
                             block = message["hash"]
                             sender = await get_label(message["account"])
                             recipient = await get_label(message["block"]["link_as_account"])
-                            if sender == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy" or (subtype == "send" and amount >= whaleamount):
+                            if message["account"] == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy":
+                                print("HELLO")
+
+                            if subtype == "send" and amount >= whaleamount:
 
                                 price = await get_price()
                                 value = round(amount * price, 0)
-                                if sender == "ban_3i63uiiq46p1yzcm6yg81khts4xmdz9nyzw7mdhggxdtq8mif8scg1q71gfy":
-                                    if amount == 23.5:
-                                        send_tweet("test")
-                                    if amount == 22.5:
-                                        print("TEST SENT FROM")
+
                                 if sender == lastsender and not throttle and amount >= whaleamount:
                                     throttle = True
                                     tweet = sender + " is sending many big payments!! Check them out!\n https://creeper.banano.cc/explorer/block/" + block
